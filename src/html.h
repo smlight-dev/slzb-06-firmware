@@ -798,7 +798,7 @@ const char HTTP_ABOUT[] PROGMEM =
     // "<script src='https://cdn.jsdelivr.net/npm/@webcomponents/webcomponentsjs@2/webcomponents-loader.min.js'></script>"
     // "<script type='module' src='https://cdn.jsdelivr.net/gh/zerodevx/zero-md@1/src/zero-md.min.js'></script>"
     // "<zero-md src='https://raw.githubusercontent.com/smlight-dev/SLZB-06/main/README.md'></zero-md>"
-    "<a class='nav-link' href='https://smlight.tech/products/slzb06'><i class='glyphicon glyphicon-info-sign'></i>Official web site with support page</a>"
+    "<a class='nav-link' href='https://smlight.tech/products/slzb-06'><i class='glyphicon glyphicon-info-sign'></i>Official web site with support page</a>"
     "</div>"
     "</div>"
     "</div>"
