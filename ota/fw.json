@@ -1,11 +1,11 @@
 {
 	"coordinator":{
-		"link":"https://raw.githubusercontent.com/Tarik2142/devHost/main/coordinator_20221226.bin",
+		"link":"https://raw.githubusercontent.com/smlight-dev/slzb-06-firmware/dev/ota/coordinator_20221226.bin",
 		"rev":"20221226",
 		"notes":"Improve performance/reliability for larger network (100+ devices)\nIncrease request retry attempts\nIncrease routing table sizes\nSimpleLink SDK 6.10.01.01"
 	},
 	"router":{
-		"link":"https://raw.githubusercontent.com/Tarik2142/devHost/main/router_20221102.bin",
+		"link":"https://raw.githubusercontent.com/smlight-dev/slzb-06-firmware/dev/ota/router_20221102.bin",
 		"rev":"20221102",
 		"notes":"Allow to set transmit power\nFix directly connected Xiaomi devices disconnecting\nSimpleLink SDK 6.30.00.84"
 	}
