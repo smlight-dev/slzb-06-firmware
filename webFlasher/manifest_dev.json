@@ -5,7 +5,7 @@
         "chipFamily": "ESP32",
         "improv": false,
         "parts": [
-          { "path": "dev.bin", "offset": 0 }
+          { "path": "https://raw.githubusercontent.com/smlight-dev/slzb-06-firmware/dev/webFlasher/dev.bin", "offset": 0 }
         ]
       }
     ]
