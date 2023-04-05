@@ -1,0 +1,12 @@
+{
+    "name": "SLZB-06 development build",
+    "builds": [
+      {
+        "chipFamily": "ESP32",
+        "improv": false,
+        "parts": [
+          { "path": "dev.bin", "offset": 0 }
+        ]
+      }
+    ]
+  }
