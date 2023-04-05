@@ -1,0 +1,12 @@
+{
+    "name": "SLZB-06 firmware",
+    "builds": [
+      {
+        "chipFamily": "ESP32",
+        "improv": false,
+        "parts": [
+          { "path": "firmware.bin", "offset": 0 }
+        ]
+      }
+    ]
+  }
