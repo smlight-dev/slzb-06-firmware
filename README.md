@@ -25,7 +25,7 @@ This repository contains latest firmware for ESP32 peripheral module of [SLZB-06
 - Zigbee2MQTT and ZHA config helper;
 - Control behaviour of LED (you can disable Mode LED, Power LED through firmware, or toggle both by the button long press);
 - DHCP or static IP address for Ethernet connection;
-- ESP32 OTA update, ESP32 (peripheral) and CC2652P (Zigbee) restart;
+- ESP32 (peripheral) and CC2652P (Zigbee) OTA updates, ESP32  and CC2652P restart;
 - Switch CC2652P (Zigbee) to flash mode;
 - Pairing mode for adapter in router mode;
 - Fully responsive web-interface based on the latest Bootstrap 5.2.
