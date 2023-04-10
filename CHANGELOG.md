@@ -2,7 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - Development
+## [1.0.0] 20230409 dev
+### Added
+- Zigbee OTA updates
+- Zigbee firmare version on Status page
+- Added a link to the manual on About page
+- Prometheus / OpenMetrics metrics endpoint test. Endpoint: /metrics
+
+### Changed
+- Minor code improvements and optimizations
+- Changed the order of links on the About page
+
+### Fixed
+- Fixed fields validation on Ethernet page
+
+### Removed
 
 ## [0.9.9] 20230303
 ### Added
