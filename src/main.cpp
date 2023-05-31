@@ -23,7 +23,8 @@
 #define BUFFER_SIZE 256
 
 ConfigSettingsStruct ConfigSettings;
-InfosStruct Infos;
+zbVerStruct zbVer;
+//InfosStruct Infos;
 
 volatile bool btnFlag = false;
 bool updWeb = false;
@@ -44,6 +45,8 @@ void handlelongBtn();
 void handletmrNetworkOverseer();
 void setupCoordinatorMode();
 void startAP(const bool start);
+void printRecvSocket(size_t bytes_read, uint8_t net_buf[BUFFER_SIZE]);
+
 IPAddress parse_ip_address(const char *str);
 
 Ticker tmrBtnLongPress(handlelongBtn, 1000, 0, MILLIS);
@@ -756,12 +759,6 @@ void setupCoordinatorMode(){
 //   serial.write(cmd, size);
 // }
 
-void clearS2Buffer(){
-  while (Serial2.available()){//clear buffer
-    Serial2.read();
-  }
-}
-
 void setup(){
   Serial.begin(115200);//todo ifdef DEBUG
   ConfigSettings.apStarted = false;
@@ -806,7 +803,7 @@ void setup(){
   const byte cmdLedLen = 0x02;
   const byte zigLed1Off[] = {cmdFrameStart, cmdLedLen, cmdLed0, cmdLed1, cmdLedIndex, cmdLedStateOff, 0x2E}; //resp FE 01 67 0A 00 6C
   const byte zigLed1On[] = {cmdFrameStart, cmdLedLen, cmdLed0, cmdLed1, cmdLedIndex, cmdLedStateOn, 0x2F};
-  const byte cmdLedResp[] = {0xFE, 0x01, 0x67, 0x0A, 0x00, 0x6C};
+  const byte cmdLedResp[] = {cmdFrameStart, cmdLedIndex, 0x67, cmdLed1, cmdLedStateOff, 0x6C};
   Serial2.begin(115200, SERIAL_8N1, CC2652P_RXD, CC2652P_TXD); //start zigbee serial
   bool respOk = false;
   for (uint8_t i = 0; i < 12; i++){//wait for zigbee start
@@ -816,7 +813,7 @@ void setup(){
     Serial2.flush();
     delay(400);
     for (uint8_t i = 0; i < 5; i++){
-      if (Serial2.read() != 0xFE){//check for packet start
+      if (Serial2.read() != cmdFrameStart){//check for packet start
         Serial2.read();//skip
       }else{
         for (uint8_t i = 1; i < 4; i++){
@@ -841,10 +838,14 @@ void setup(){
           delay(1000);
         }
     printLogMsg("[ZBCHK] Wrong answer");
+    printLogMsg("[ZBVER] Unknown");
+    zbVer.zbRev = 0;
   }else{
     Serial2.write(zigLed1Off, sizeof(zigLed1Off));
     Serial2.flush();
-    printLogMsg("[ZBCHK] connection established");
+    clearS2Buffer();
+    printLogMsg("[ZBCHK] Connection OK");
+    getZbVer();
   }
   digitalWrite(LED_YELLOW, 0);
   digitalWrite(LED_BLUE, 0);
@@ -908,8 +909,10 @@ void setup(){
   setLedsDisable(ConfigSettings.disableLeds, true);
   setupCoordinatorMode();
   ConfigSettings.connectedClients = 0;
+  ConfigSettings.zbFlashing = 0;
 
   Serial2.updateBaudRate(ConfigSettings.serialSpeed);//set actual speed
+
   printLogMsg("Setup done");
 }
 
@@ -1037,7 +1040,7 @@ void loop(void){
     }
   }
 
-  if (ConfigSettings.coordinator_mode != COORDINATOR_MODE_USB){
+  if (ConfigSettings.coordinator_mode != COORDINATOR_MODE_USB && ConfigSettings.zbFlashing != 1){//stop socket upd in usb mode or zb ota
     uint16_t net_bytes_read = 0;
     uint8_t net_buf[BUFFER_SIZE];
     uint16_t serial_bytes_read = 0;

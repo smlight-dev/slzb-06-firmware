@@ -33,12 +33,14 @@ const uint8_t MAX_SOCKET_CLIENTS = 5;
 
 enum COORDINATOR_MODE_t : uint8_t {COORDINATOR_MODE_LAN, COORDINATOR_MODE_WIFI, COORDINATOR_MODE_USB};
 
-// struct JsonConsts_t{
-//   char* str;
-// };
-// JsonConsts_t JsonConsts {
-//   "sadasd"
-// };
+struct zbVerStruct{
+  uint32_t zbRev;
+  uint8_t maintrel;
+  uint8_t minorrel;
+  uint8_t majorrel;
+  uint8_t product;
+  uint8_t transportrev;
+};
 
 struct ConfigSettingsStruct{
   char ssid[50];
@@ -75,14 +77,15 @@ struct ConfigSettingsStruct{
   bool wifiWebSetupInProgress;
   bool fwEnabled;
   IPAddress fwIp;
+  bool zbFlashing;
 };
 
-struct InfosStruct
-{
-  char device[8];
-  char mac[8];
-  char flash[8];
-};
+// struct InfosStruct
+// {
+//   char device[8];
+//   char mac[8];
+//   char flash[8];
+// };
 
 typedef CircularBuffer<char, 8024> LogConsoleType;
 

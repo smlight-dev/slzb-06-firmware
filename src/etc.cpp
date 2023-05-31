@@ -78,22 +78,22 @@ float getCPUtemp(bool clear)
 
 void zigbeeEnableBSL()
 {
-  printLogMsg("Zigbee BSL pin ON");
+  //printLogMsg("Zigbee BSL pin ON");
   DEBUG_PRINTLN(F("Zigbee BSL pin ON"));
   digitalWrite(CC2652P_FLSH, 0);
   delay(100);
 
-  printLogMsg("Zigbee RST pin ON");
+  //printLogMsg("Zigbee RST pin ON");
   DEBUG_PRINTLN(F("Zigbee RST pin ON"));
   digitalWrite(CC2652P_RST, 0);
   delay(250);
 
-  printLogMsg("Zigbee RST pin OFF");
+  //printLogMsg("Zigbee RST pin OFF");
   DEBUG_PRINTLN(F("Zigbee RST pin OFF"));
   digitalWrite(CC2652P_RST, 1);
   delay(2000);
 
-  printLogMsg("Zigbee BSL pin OFF");
+  //printLogMsg("Zigbee BSL pin OFF");
   DEBUG_PRINTLN(F("Zigbee BSL pin OFF"));
   digitalWrite(CC2652P_FLSH, 1);
   printLogMsg("Now you can flash CC2652!");

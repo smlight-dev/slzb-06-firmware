@@ -4,7 +4,7 @@
       <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#systemControl" type="button"
         role="tab" aria-controls="home" aria-selected="true"><svg class="me-1" xmlns="http://www.w3.org/2000/svg"
           width="16" height="16" fill="currentColor" class="bi bi-sliders" viewBox="0 0 16 16">
-          <use xlink:href="icons.svg#systemControl"/>
+          <use xlink:href="icons.svg#systemControl" />
         </svg>System Control</button>
     </li>
     <li class="nav-item" role="presentation">
@@ -12,7 +12,7 @@
         role="tab" aria-controls="profile" aria-selected="false" onclick="$('.masonry').masonry()"><svg class="me-1"
           xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-tools"
           viewBox="0 0 16 16">
-          <use xlink:href="icons.svg#systemTools"/>
+          <use xlink:href="icons.svg#systemTools" />
         </svg>System Tools</button>
     </li>
   </ul>
@@ -50,14 +50,14 @@
             <div class='card-header'>Modules control</div>
             <div class='card-body'>
               <div class="row">
-                <button type='button' data-cmd="1"
-                  class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>Zigbee Restart</button>
-                <button type='button' data-cmd="2"
-                  class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>Zigbee Flash Mode</button>
+                <button type='button' data-cmd="1" class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>Zigbee
+                  Restart</button>
+                <button type='button' data-cmd="2" class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>Zigbee
+                  Flash Mode</button>
                 <button type='button' data-cmd="0" class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>Router
                   Reconnect</button>
-                <button type='button' data-cmd="3"
-                  class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>ESP32 Restart</button>
+                <button type='button' data-cmd="3" class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>ESP32
+                  Restart</button>
               </div>
             </div>
           </div>
@@ -67,15 +67,14 @@
             <div class='card-header'>Current session control</div>
             <div class='card-body'>
               <div class="row">
-                <button type='button' data-cmd="4"
-                  class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>LAN Mode ON</button>
-                <button type='button' data-cmd="5"
-                  class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>USB Mode ON</button>
-                <button type='button' data-cmd="6"
-                  class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>Yellow LED
+                <button type='button' data-cmd="4" class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>LAN Mode
+                  ON</button>
+                <button type='button' data-cmd="5" class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>USB Mode
+                  ON</button>
+                <button type='button' data-cmd="6" class='btn btn-outline-primary col-sm-12 col-md-auto mb-1'>Yellow LED
                   Toggle</button>
-                <button type="button" data-cmd="7"
-                  class="btn btn-outline-primary col-sm-12 col-md-auto mb-1">Blue LED Toggle</button>
+                <button type="button" data-cmd="7" class="btn btn-outline-primary col-sm-12 col-md-auto mb-1">Blue LED
+                  Toggle</button>
               </div>
             </div>
           </div>
@@ -87,7 +86,7 @@
       <div class="row masonry" data-masonry='{"percentPosition": true }'>
         <div class="col-sm-12 col-md-6 mb-4">
           <div class='card'>
-            <div class='card-header'>ESP32 Update</div>
+            <div class='card-header'>ESP32 OTA Update</div>
             <div class='card-body'>
               <form class="container" method='POST' action='#' enctype='multipart/form-data' id='upload_form'>
                 <input type='file' name='update' id='file' onchange='sub(this)' style=display:none accept='.bin'>
@@ -125,20 +124,18 @@
           </div>
         </div>
 
-        <!-- <div class="col-sm-12 col-md-6 mb-4">
+        <div class="col-sm-12 col-md-6 mb-4">
           <div class='card'>
             <div class='card-header'>Zigbee OTA update</div>
             <div class='card-body'>
-              <div class="row">
-                <div class="col">
-                  <label for="zbFirmware" class="form-label">Select firmware file</label>
-                  <input class="form-control" type="file" id="zbFirmware" accept=".hex">
-                  <button type="button" class="btn btn-warning col-sm-12 col-md-6">Update Zigbee firmware</button>
+              <div class="container" style="max-width: 400px;">
+                <div class="row">
+                  <button type="button" class="btn btn-warning col-sm-12 flsh_zb mb-2">Check for updates</button>
                 </div>
               </div>
             </div>
           </div>
-        </div> -->
+        </div>
 
         <div class="col-sm-12 col-md-6 mb-4">
           <div class='card'>
@@ -154,7 +151,8 @@
                   <div class="mt-3">
                     <input class="form-control col-sm-6" id="sendHex" type="text" name="sendHex" value="" maxlength="50"
                       placeholder="Send hex to zigbee module">
-                    <button type="button" onclick="sendHex()" class="btn btn-outline-primary col-sm-3 mt-2">Send</button>
+                    <button type="button" onclick="sendHex()"
+                      class="btn btn-outline-primary col-sm-3 mt-2">Send</button>
                   </div>
                   <!-- --------- -->
                 </div>
@@ -169,6 +167,11 @@
 
   <script src="/js/masonry.min.js"></script>
   <script>
+    $(".flsh_zb").click(function () {//http://192.168.0.105/api?action=10&fwurl=https://raw.githubusercontent.com/Tarik2142/devHost/main/coordinator_20220219.bin
+      alert("Feature under development");
+      //modalConstructor("flashZB");//
+      //apiLink + api.actions.API_FLASH_ZB + "&fwurl=" + "https://raw.githubusercontent.com/Tarik2142/devHost/main/" + this.id + ".bin"
+    });
     function sub(obj) {
       let fileName = obj.value.split('\\\\');
       if (fileName != "") {

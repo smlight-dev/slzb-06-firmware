@@ -2,6 +2,19 @@ nav h2, #pagenamePC{
   color: lightcoral;
 }
 
+input.swFx{
+  border: 1px solid rgba(0,0,0,.25) !important;
+}
+
+input.swFx:checked {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+}
+
+label.swFx{
+  color: black !important;
+}
+
 #smPreloader{
   position: absolute;
   left: calc(50% - 50px);

@@ -6,6 +6,7 @@
 #include <LittleFS.h>
 #include <Update.h>
 #include <WebServer.h>
+#include "WiFiClientSecure.h"
 #include "FS.h"
 #include "WiFi.h"
 #include "config.h"
@@ -31,6 +32,8 @@
 #include "Ticker.h"
 
 extern struct ConfigSettingsStruct ConfigSettings;
+extern struct zbVerStruct zbVer;
+
 bool wifiWebSetupInProgress = false;
 extern const char *coordMode;
 extern const char* configFileSystem;
@@ -60,6 +63,7 @@ enum API_PAGE_t : uint8_t { API_PAGE_ROOT,
 WebServer serverWeb(80);
 
 HTTPClient clientWeb;
+WiFiClient eventsClient;
 
 void webServerHandleClient() {
     serverWeb.handleClient();
@@ -89,6 +93,8 @@ void initWebServer() {
     serverWeb.on("/saveFile", handleSavefile);
     serverWeb.on("/switch/firmware_update/toggle", handleZigbeeBSL);  // for cc-2538.py ESPHome edition back compatibility | will be disabled on 1.0.0
     serverWeb.on("/api", handleApi);
+    serverWeb.on("/events", handleEvents);
+    serverWeb.on("/metrics", handleMetrics);
     serverWeb.on("/logout", []() { 
         serverWeb.sendHeader(F("Content-Encoding"), F("gzip"));
         serverWeb.send_P(401, contTypeTextHtml, (const char *)PAGE_LOGOUT_html_gz, PAGE_LOGOUT_html_gz_len);
@@ -127,6 +133,77 @@ void initWebServer() {
     DEBUG_PRINTLN(F("webserver setup done"));
 }
 
+void handleMetrics(){
+    const char* rn = "\n";
+    const float CPUtemp = getCPUtemp();
+    const char* prefix = "smlight_";
+    char resp[400];
+    sprintf(resp, "%ssocket_clients{} %d%s%ssocket_uptime{} %d%s%sdevice_uptime{} %d%s%sdevice_temp{} %s%s%sfree_heap{} %d", prefix, ConfigSettings.connectedClients, rn, prefix, ConfigSettings.socketTime, rn, prefix, millis(), rn, prefix, String(CPUtemp), rn, prefix, ESP.getFreeHeap() / 1024);//socketConnected=1\r\nsocketUptime=1111111111\r\ndeviceUptime=1111111111\r\ndeviceTemp=28.44\r\nfreeHeap=111
+    serverWeb.send(HTTP_CODE_OK, contTypeText, resp);
+}
+
+void clearS2Buffer(){
+  while (Serial2.available()){//clear buffer
+    Serial2.read();
+  }
+}
+
+void getZbVer(){
+    zbVer.zbRev = 0;
+    const byte cmdFrameStart = 0xFE;
+    const byte zero = 0x00;
+    const byte cmd1 = 0x21;
+    const byte cmd2 = 0x02;
+    const byte cmdSysVersion[] = {cmdFrameStart, zero, cmd1, cmd2, 0x23};
+    for (uint8_t i = 0; i < 6; i++){
+      if (Serial2.read() != cmdFrameStart || Serial2.read() != 0x0a || Serial2.read() != 0x61 || Serial2.read() != cmd2){//check for packet start
+        clearS2Buffer();//skip
+        Serial2.write(cmdSysVersion, sizeof(cmdSysVersion));
+        Serial2.flush();
+        delay(100);
+      }else{
+        const uint8_t zbVerLen = 11;
+        byte zbVerBuf[zbVerLen];
+        for (uint8_t i = 0; i < zbVerLen; i++){
+          zbVerBuf[i] = Serial2.read();
+        }
+        zbVer.zbRev =  zbVerBuf[5] | (zbVerBuf[6] << 8) | (zbVerBuf[7] << 16) | (zbVerBuf[8] << 24);
+        zbVer.maintrel = zbVerBuf[4];
+        zbVer.minorrel = zbVerBuf[3];
+        zbVer.majorrel = zbVerBuf[2];
+        zbVer.product = zbVerBuf[1];
+        zbVer.transportrev = zbVerBuf[0];
+        printLogMsg(String("[ZBVER]") + " Rev: " + zbVer.zbRev + " Maintrel: " + zbVer.maintrel + " Minorrel: " + zbVer.minorrel + " Majorrel: " + zbVer.majorrel + " Transportrev: " + zbVer.transportrev + " Product: " + zbVer.product);
+        clearS2Buffer();
+        break;
+      }
+    }
+}
+
+void handleEvents(){
+    eventsClient = serverWeb.client();
+    if(eventsClient){// send events header
+        eventsClient.println("HTTP/1.1 200 OK");
+        eventsClient.println("Content-Type: text/event-stream;");
+        eventsClient.println("Connection: close");
+        eventsClient.println("Access-Control-Allow-Origin: *");
+        eventsClient.println("Cache-Control: no-cache");
+        eventsClient.println();
+        eventsClient.flush();
+    }
+}
+
+void sendEvent(const char* event, const uint8_t evsz, const String data){
+    if(eventsClient){
+        char evnmArr[10 + evsz];
+        sprintf(evnmArr, "event: %s\n", event);
+        eventsClient.print(evnmArr);
+        eventsClient.print(String("data: ") + data + "\n\n");
+        //eventsClient.println();
+        eventsClient.flush();
+    }
+}
+
 void sendGzip(const char *contentType, const uint8_t content[], uint16_t contentLen) {
     serverWeb.sendHeader(F("Content-Encoding"), F("gzip"));
     serverWeb.send_P(HTTP_CODE_OK, contentType, (const char *)content, contentLen);
@@ -148,6 +225,20 @@ void hex2bin(uint8_t *out, const char *in){
     }
 }
 
+bool sendCmdWait(const byte cmd[], const uint8_t cmdlen, const uint16_t maxdelay){
+    unsigned long start = millis();
+    Serial2.write(cmd, cmdlen);
+    Serial2.flush();
+    while (true){
+       if (millis() - start >= maxdelay){
+        return 0;
+       }else if(Serial2.read() == 0x00 && Serial2.read() == 0xcc){
+        return 1;
+       }
+       delay(20);
+    }
+}
+
 void handleApi() {  // http://192.168.0.116/api?action=0&page=0
     enum API_ACTION_t : uint8_t { API_GET_PAGE,
                                   API_GET_PARAM,
@@ -158,7 +249,8 @@ void handleApi() {  // http://192.168.0.116/api?action=0&page=0
                                   API_SEND_HEX,
                                   API_WIFICONNECTSTAT,
                                   API_CMD,
-                                  API_GET_LOG };
+                                  API_GET_LOG,
+                                  API_FLASH_ZB };
     const char *action = "action";
     const char *page = "page";
     const char *Authentication = "Authentication";
@@ -184,7 +276,60 @@ void handleApi() {  // http://192.168.0.116/api?action=0&page=0
         DEBUG_PRINTLN(F("[handleApi] arg 0 is:"));
         DEBUG_PRINTLN(action);
         switch (action) {
-            case API_GET_LOG:{
+            case API_FLASH_ZB:{
+                ConfigSettings.zbFlashing = 1;
+                const char* fwurlArg = "fwurl";
+                const uint8_t eventLen = 11;
+                const char* tagZB_FW_info = "ZB_FW_info";
+                const char* tagZB_FW_err = "ZB_FW_err";
+                const char* tagZB_FW_progress = "ZB_FW_prgs";
+                if(serverWeb.hasArg(fwurlArg)){
+                    String fwUrl = serverWeb.arg(fwurlArg);
+                    serverWeb.send(HTTP_CODE_OK, contTypeText, ok);
+                    uint8_t evWaitCount = 0;
+                    while (!eventsClient.connected() && evWaitCount < 200){//wait for events
+                        webServerHandleClient();
+                        delay(25);
+                        evWaitCount++;
+                    }
+                    //sendEvent(tag, eventLen, String("FW Url: ") + fwUrl);
+                    HTTPClient https;
+                    WiFiClientSecure client;
+                    client.setInsecure();
+                    https.begin(client, fwUrl);//https://raw.githubusercontent.com/Tarik2142/devHost/main/coordinator_20211217.bin
+                    https.addHeader("Content-Type", "application/octet-stream");
+                    const int16_t httpsCode = https.GET();
+                    //sendEvent(tag, eventLen, String("REQ result: ") + httpsCode);
+                    if (httpsCode == HTTP_CODE_OK){
+                        const uint32_t fwSize = https.getSize();
+                        sendEvent(tagZB_FW_info, eventLen, "[start]");
+                        sendEvent(tagZB_FW_info, eventLen, "Downloading firmware...");
+                        const char* tempFile = "/fw.bin";
+                        LittleFS.remove(tempFile);
+                        File fwFile = LittleFS.open(tempFile, "w", 1);
+                        uint8_t buff[4];
+                        uint32_t downloaded = 0;
+                        while(client.readBytes(buff, sizeof(buff))){
+                            downloaded += fwFile.write(buff, sizeof(buff));
+                            if(!(downloaded % 8192)){
+                                const uint8_t d = ((float)downloaded / fwSize) * 100;
+                                sendEvent(tagZB_FW_progress, eventLen, String(d));
+                            }
+                        }
+                        fwFile.close();
+                        //in development
+                        
+                    }else{
+                        serverWeb.send(HTTP_CODE_BAD_REQUEST, contTypeText, String(httpsCode));
+                        sendEvent(tagZB_FW_err, eventLen, "REQ error: http_code " + String(httpsCode));
+                    }
+                }else{
+                    serverWeb.send(HTTP_CODE_BAD_REQUEST, contTypeText, "missing arg 1");
+                }
+                ConfigSettings.zbFlashing = 0;
+            }
+            break;
+            case API_GET_LOG:{// todo: move to server events
                 String result;
                 result = logPrint();
                 serverWeb.send(HTTP_CODE_OK, contTypeText, result);
@@ -301,6 +446,8 @@ void handleApi() {  // http://192.168.0.116/api?action=0&page=0
                             }else{
                                 resp = (String)ConfigSettings.coordinator_mode;
                             }
+                        }else if(serverWeb.arg(param) == "zbRev"){
+                            resp = zbVer.zbRev > 0 ? (String)zbVer.zbRev : "Unknown";
                         }
                     }
                     serverWeb.send(HTTP_CODE_OK, contTypeText, resp);
@@ -479,12 +626,6 @@ void handleSaveParams(){
                 } else {
                     doc[dhcp] = zero;
                 }
-                // const char* disablePingCtrl = "disablePingCtrl";
-                // if (serverWeb.arg(disablePingCtrl) == on) {
-                //     doc[disablePingCtrl] = one;
-                // } else {
-                //     doc[disablePingCtrl] = zero;
-                // }
                 configFile = LittleFS.open(configFileEther, FILE_WRITE);
                 serializeJson(doc, configFile);
                 configFile.close();
@@ -815,7 +956,7 @@ void handleRoot() {
         getReadableTime(readableTime, 0);
         doc["uptime"] = readableTime;
 
-        float CPUtemp = getCPUtemp();
+        const float CPUtemp = getCPUtemp();
         doc["deviceTemp"] = String(CPUtemp);
         doc["hwRev"] = deviceModel;
         doc["espModel"] = String(ESP.getChipModel());
@@ -904,6 +1045,9 @@ void handleRoot() {
             doc[wifiModeAPStatus] = "Not started";
             //doc[wifiMode] = "Client";
         }
+
+        if (zbVer.zbRev > 0) doc["zbRev"] = zbVer.zbRev;
+
         serializeJson(doc, result);
         serverWeb.sendHeader(respHeaderName, result);
 }
@@ -981,6 +1125,7 @@ void printLogMsg(String msg) {
         logPush(msg[j]);
     }
     logPush('\n');
+    webServerHandleClient();
 }
 
 // int totalLength;        // total size of firmware

@@ -9,6 +9,13 @@ const spiner2 = $("<span>", {
 	"class": classHide
 });
 
+const zbFwInfoUrl = "https://raw.githubusercontent.com/smlight-dev/slzb-06-firmware/dev/ota/fw.json";
+
+const headerText = ".modal-title";
+const headerBtnClose = ".modal-btn-close";
+const modalBody = ".modal-body";
+const modalBtns = ".modal-footer";
+
 const pages = {
 	API_PAGE_ROOT: {num: 0, str: "/", title: "Status"},
 	API_PAGE_GENERAL: {num: 1, str: "/general", title: "General"},
@@ -31,7 +38,8 @@ const api = {
 		API_SEND_HEX: 6,
 		API_WIFICONNECTSTAT: 7,
 		API_CMD: 8,
-		API_GET_LOG: 9
+		API_GET_LOG: 9,
+		API_FLASH_ZB: 10
 	},
 	pages: pages
 }
@@ -147,6 +155,7 @@ serial:
   # Location of SLZB-06
   port: tcp://${ip}:${port}
   baudrate: ${$("#baud").val()}
+  adapter: zstack
   # Disable green led?
   disable_led: false
 # Set output power to max 20
@@ -160,6 +169,7 @@ serial:
 # Location of SLZB-06
   port: INSERT_DEVICE_PATCH_HERE
   baudrate: ${$("#baud").val()}
+  adapter: zstack
 # Disable green led?
   disable_led: false
 # Set output power to max 20
@@ -446,28 +456,176 @@ function rebootWait() {
 	}, 2000);
 }
 
+function modalAddSpiner() {
+	$('<div>', {
+		"role": "status",
+		"class": "spinner-border text-primary",
+		append: $("<span>", {
+			"class": classHide
+		})
+	}).appendTo(modalBtns);
+}
+
+function startEvents() {
+	$(modalBtns).html("");
+	modalAddSpiner();
+	$(modalBody).html("");
+	$("<div>", {
+		id: "zbFlshPgsTxt",
+		text: "Waiting for device..."
+	}).appendTo(modalBody);
+	$("<div>", {
+		"class": "progress",
+		append: $("<div>", {
+			"class": "progress-bar progress-bar-striped progress-bar-animated",
+			id: "zbFlshPrgs",
+			style: "width: 100%;"
+		})
+	}).appendTo(modalBody);
+	var source = new EventSource('/events');
+	source.addEventListener('open', function(e) {
+		console.log("Events Connected");
+	}, false);
+
+	source.addEventListener('error', function(e) {
+		if (e.target.readyState != EventSource.OPEN) {
+			console.log("Events Err");
+		}
+	}, false);
+
+	source.addEventListener('ZB_FW_prgs', function(e) {
+		const val = e.data + "%";
+		$("#zbFlshPrgs").text(val);
+		$("#zbFlshPrgs").css("width", val);
+	}, false);
+
+	source.addEventListener('ZB_FW_info', function(e) {
+		const data = e.data.replaceAll("`", "<br>");
+		if(data == "[start]") $("#zbFlshPrgs").removeClass("progress-bar-animated");
+		$("#zbFlshPgsTxt").html(data);
+		if(e.data.indexOf("Update done!") > 0){
+			$(".progress").addClass(classHide);
+			$(modalBody).css("color", "green");
+				setTimeout(()=>{
+					$(modalBtns).html("");
+					modalAddClose();
+					source.close();
+				}, 1000);
+			}
+	}, false);
+
+	source.addEventListener('ZB_FW_err', function(e) {
+		const data = e.data.replaceAll("`", "<br>");
+		$(modalBtns).html("");
+		$("#zbFlshPgsTxt").html(data);
+		$(".progress").addClass(classHide);
+		$(modalBody).html(e.data).css("color", "red");
+		modalAddClose();
+	}, false);
+}
+
+function modalAddClose() {
+	$('<button>', {
+		type: "button",
+		"class": "btn btn-primary",
+		text: "Close",
+		click: function() {
+			closeModal();
+		}
+	}).appendTo(modalBtns);
+}
+
 function modalConstructor(type, params) {
 	console.log("[modalConstructor] start");
-	const headerText = ".modal-title";
-	const headerBtnClose = ".modal-btn-close";
-	const modalBody = ".modal-body";
-	const modalBtns = ".modal-footer";
 	//$(".modal").css("display", "");
 	$(headerText).text("").css("color", "");
 	$(modalBody).text("").css("color", "");
 	$(modalBtns).html("");
 	switch (type) {
+		case "flashZB":
+			$(headerText).text("Zigbee OTA update");
+			$(modalBody).html("Fetching firmware information...");
+			modalAddSpiner();
+			$.get(zbFwInfoUrl, function (data) {
+				const fw = JSON.parse(data);
+				const flashZBrow = "#flashZBrow";
+				const rows = 5;
+				$.get(apiLink + api.actions.API_GET_PARAM + "&param=zbRev", function (curZbVer) {
+					const cl = "col-sm-12 mb-2 ";
+					$(modalBody).html("");
+					$(modalBtns).html("");
+					modalAddClose();
+					$('<div>', {
+						"class": "container",
+						style: "max-width : 400px",
+						append: $("<div>", {
+							"class": "row",
+							id: "flashZBrow"
+						})
+					}).appendTo(modalBody);
+					$("<span>", {
+						"class": cl,
+						text: "Your current firmware revision: " + curZbVer
+					}).appendTo(flashZBrow);
+					$("<hr>", {
+						"class": "border border-dark border-top"
+					}).appendTo(flashZBrow);
+					$("<span>", {
+						"class": cl,
+						text: "Awaiable coordinator firmware:"
+					}).appendTo(flashZBrow);
+					$("<textarea>", {
+						"class": cl + "form-control",
+						text: "Revision: " + fw.coordinator.rev + "\nRelease notes:\n" + fw.coordinator.notes,
+						rows: rows,
+						disabled: ""
+					}).appendTo(flashZBrow);
+					$("<button>", {
+						"class": cl + "btn btn-warning",
+						text: "Flash Coordinator " + fw.coordinator.rev,
+						click: function() {
+							startEvents();
+							$.get(apiLink + api.actions.API_FLASH_ZB + "&fwurl=" + fw.coordinator.link, function () {
+
+							});
+						}
+					}).appendTo(flashZBrow);
+
+					$("<hr>", {
+						"class": "border border-dark border-top"
+					}).appendTo(flashZBrow);
+					$("<span>", {
+						"class": cl,
+						text: "Awaiable router firmware:"
+					}).appendTo(flashZBrow);
+					$("<textarea>", {
+						"class": cl + "form-control",
+						text: "Revision: " + fw.router.rev + "\nRelease notes:\n" + fw.router.notes,
+						rows: rows,
+						disabled: ""
+					}).appendTo(flashZBrow);
+					$("<button>", {
+						"class": cl + "btn btn-warning",
+						text: "Flash Router " + fw.router.rev,
+						click: function() {
+							startEvents();
+							$.get(apiLink + api.actions.API_FLASH_ZB + "&fwurl=" + fw.router.link, function () {
+								
+							});
+						}
+					}).appendTo(flashZBrow);
+				});
+				
+			}).fail(function() {
+				$(modalBody).html("Error fetching firmware information<br>Check your network!").css("color", "red");
+				$(modalBtns).html("");
+				modalAddClose();
+			});
+		break;
 		case "flashWarning":
 			$(headerText).text("WARNING").css("color", "red");
 			$(modalBody).text("Flashing unofficial, incorrect or corrupted firmware can damage or brick your device!!!").css("color", "red");
-			$('<button>', {
-				type: "button",
-				"class": "btn btn-success",
-				text: "Close",
-				click: function() {
-					closeModal();
-				}
-			}).appendTo(modalBtns);
+			modalAddClose();
 			$('<button>', {
 				type: "button",
 				"class": "btn btn-danger",
@@ -482,13 +640,7 @@ function modalConstructor(type, params) {
 		case "rebootWait":
 			$(headerText).text("DEVICE RESTART");
 			$(modalBody).text("Waiting for device... This window will automatically close when the device reboots.");
-			$('<div>', {
-				"role": "status",
-				"class": "spinner-border text-primary",
-				append: $("<span>", {
-					"class": classHide
-				})
-			}).appendTo(modalBtns);
+			modalAddSpiner();
 			var waitTmr = setInterval(function (params) {
 				$.get( "/", function() {
 					clearInterval(waitTmr);
@@ -502,14 +654,8 @@ function modalConstructor(type, params) {
 				clearInterval(waitTmr);
 				$(modalBtns).html("");
 				$(modalBody).text("No response from the device, this may happen if the device changed IP address or if the USB mode was selected.").css("color", "red");
-				$('<button>', {
-					type: "button",
-					"class": "btn btn-warning",
-					text: "Close",
-					click: function() {
-						closeModal();
-					}
-				}).appendTo(modalBtns);
+				$(modalBtns).html("");
+				modalAddClose();
 			}, 20000);
 		break;
 		case "saveOk":
@@ -517,13 +663,7 @@ function modalConstructor(type, params) {
 				$(headerText).text("Wi-Fi network connection");
 				$(modalBody).text(`Connecting to the network in progress...
 				Wait for the result.`);
-				$('<div>', {
-					"role": "status",
-					"class": "spinner-border text-primary",
-					append: $("<span>", {
-						"class": classHide
-					})
-				}).appendTo(modalBtns);
+				modalAddSpiner();
 				let counter = 0;
 				var getWifiIp = setInterval(function (params) {
 					if(counter <= 15){
@@ -551,14 +691,7 @@ function modalConstructor(type, params) {
 						clearInterval(getWifiIp);
 						$(modalBody).text("Connection error, check SSID, PASSWORD and try again").css("color", "red");
 						$(modalBtns).html("");
-						$('<button>', {
-							type: "button",
-							"class": "btn btn-success",
-							text: "Close",
-							click: function() {
-								closeModal();
-							}
-						}).appendTo(modalBtns);
+						modalAddClose();
 					}
 				}, 1000);
 			}else{

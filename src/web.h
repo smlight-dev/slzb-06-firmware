@@ -1,4 +1,5 @@
 #include "Arduino.h"
+void handleEvents();
 void initWebServer();
 void webServerHandleClient();
 void handleGeneral();
@@ -18,5 +19,6 @@ void printLogMsg(String msg);
 void handleSaveParams();
 bool checkAuth();
 void handleZigbeeBSL();
-
-#define UPD_FILE "https://github.com/smlight-dev/SLZB-06/releases/latest/download/SLZB-06.bin"
+void clearS2Buffer();
+void getZbVer();
+void handleMetrics();

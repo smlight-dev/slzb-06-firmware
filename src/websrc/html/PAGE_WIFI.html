@@ -56,25 +56,25 @@
                         <div class="mb-2 col-sm-12 col-md-6">
                             <div class="mb-2">
                                 <div class="form-check form-switch">
-                                    <input data-replace="dchp" class="form-check-input" id="dhcpWiFi" type="checkbox"
+                                    <input data-replace="dchp" class="form-check-input swFx" id="dhcpWiFi" type="checkbox"
                                         role="switch" name="dhcpWiFi" onclick="WifiDhcpDsbl(this.checked)">
-                                    <label class="form-check-label" for="dhcpWiFi">DHCP</label>
+                                    <label class="form-check-label swFx" for="dhcpWiFi">DHCP</label>
                                 </div>
                             </div>
                             <div class="mb-2">
                                 <label for="ip">IP</label>
                                 <input data-replace="ip" class="form-control" id="WifiIp" type="text" name="ipAddress"
-                                    placeholder="192.168.x.x">
+                                    placeholder="192.168.x.x" pattern="^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$" required>
                             </div>
                             <div class="mb-2">
                                 <label for="mask">Mask</label>
                                 <input data-replace="mask" class="form-control" id="WifiMask" type="text" name="ipMask"
-                                    placeholder="255.255.255.0">
+                                    placeholder="255.255.255.x" pattern="^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$" required>
                             </div>
                             <div class="mb-2">
                                 <label for="gateway">Gateway</label>
                                 <input data-replace="gw" type="text" class="form-control" id="WifiGateway" name="ipGW"
-                                    placeholder="192.168.x.x">
+                                    placeholder="192.168.x.x" pattern="^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$" required>
                             </div>
                         </div>
                         <br>
