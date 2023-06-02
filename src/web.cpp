@@ -97,7 +97,7 @@ void initWebServer() {
     serverWeb.on("/metrics", handleMetrics);
     serverWeb.on("/logout", []() { 
         serverWeb.sendHeader(F("Content-Encoding"), F("gzip"));
-        serverWeb.send_P(401, contTypeTextHtml, (const char *)PAGE_LOGOUT_html_gz, PAGE_LOGOUT_html_gz_len);
+        serverWeb.send_P(HTTP_CODE_UNAUTHORIZED, contTypeTextHtml, (const char *)PAGE_LOGOUT_html_gz, PAGE_LOGOUT_html_gz_len);
     });
 
     /*handling uploading firmware file */
@@ -261,7 +261,7 @@ void handleApi() {  // http://192.168.0.116/api?action=0&page=0
     if(ConfigSettings.webAuth){
         if(!checkAuth()){//Authentication
             serverWeb.sendHeader(Authentication, "fail");
-            serverWeb.send(401, contTypeText, F("wrong login or password"));
+            serverWeb.send(HTTP_CODE_UNAUTHORIZED, contTypeText, F("wrong login or password"));
             return;
         }else{
             serverWeb.sendHeader(Authentication, ok);
@@ -270,7 +270,7 @@ void handleApi() {  // http://192.168.0.116/api?action=0&page=0
     if (serverWeb.argName(0) != action) {
         DEBUG_PRINTLN(F("[handleApi] wrong arg 'action'"));
         DEBUG_PRINTLN(serverWeb.argName(0));
-        serverWeb.send(500, contTypeText, wrongArgs);
+        serverWeb.send(HTTP_CODE_INTERNAL_SERVER_ERROR, contTypeText, wrongArgs);
     } else {
         const uint8_t action = serverWeb.arg(action).toInt();
         DEBUG_PRINTLN(F("[handleApi] arg 0 is:"));
@@ -502,7 +502,7 @@ void handleApi() {  // http://192.168.0.116/api?action=0&page=0
                 if (!serverWeb.arg(page).length() > 0) {
                     DEBUG_PRINTLN(F("[handleApi] wrong arg 'page'"));
                     DEBUG_PRINTLN(serverWeb.argName(1));
-                    serverWeb.send(500, contTypeText, wrongArgs);
+                    serverWeb.send(HTTP_CODE_INTERNAL_SERVER_ERROR, contTypeText, wrongArgs);
                     return;
                 }
                 switch (serverWeb.arg(page).toInt()) {
@@ -741,7 +741,7 @@ void handleSaveParams(){
        }
        serverWeb.send(HTTP_CODE_OK, contTypeText, "ok");
     }else{
-        serverWeb.send(500, contTypeText, "bad args");
+        serverWeb.send(HTTP_CODE_INTERNAL_SERVER_ERROR, contTypeText, "bad args");
     }
 }
 
@@ -1064,7 +1064,7 @@ void handleSysTools() {
 void handleSavefile() {
     if (checkAuth()) {
         if (serverWeb.method() != HTTP_POST) {
-            serverWeb.send(405, contTypeText, F("Method Not Allowed"));
+            serverWeb.send(HTTP_CODE_METHOD_NOT_ALLOWED, contTypeText, F("Method Not Allowed"));
         } else {
             String filename = "/config/" + serverWeb.arg(0);
             String content = serverWeb.arg(1);
@@ -1085,7 +1085,7 @@ void handleSavefile() {
 
             file.close();
             serverWeb.sendHeader(F("Location"), F("/sys-tools"));
-            serverWeb.send(303);
+            serverWeb.send(HTTP_CODE_SEE_OTHER);
         }
     }
 }
