@@ -75,7 +75,7 @@ void initWebServer() {
     serverWeb.on("/js/functions.js", []() { sendGzip(contTypeTextJs, functions_js_gz, functions_js_gz_len); });
     serverWeb.on("/js/jquery-min.js", []() { sendGzip(contTypeTextJs, jquery_min_js_gz, jquery_min_js_gz_len); });
     serverWeb.on("/css/required.css", []() { sendGzip(contTypeTextJs, required_css_gz, required_css_gz_len); });
-    serverWeb.on("/favicon.ico", []() { sendGzip("img/png", favicon_ico_gz, favicon_ico_gz_len); });
+    serverWeb.on("/favicon.ico", []() { sendGzip("image/png", favicon_ico_gz, favicon_ico_gz_len); });
     serverWeb.on("/icons.svg", []() { sendGzip("image/svg+xml", icons_svg_gz, icons_svg_gz_len); });
 
     serverWeb.onNotFound([]() { serverWeb.send(HTTP_CODE_OK, contTypeText, F("URL NOT FOUND")); });  // handleNotFound);
@@ -669,7 +669,7 @@ void handleSaveParams(){
                     doc[baud] = 115200;
                 }
                 const char* port = "port";
-                if (serverWeb.hasArg(baud)){
+                if (serverWeb.hasArg(port)){
                     doc[port] = serverWeb.arg(port);
                 }else{
                     doc[port] = 6638;
@@ -839,7 +839,7 @@ void handleSerial() {
         } else if (ConfigSettings.serialSpeed == 19200) {
             doc["19200"] = checked;
         } else if (ConfigSettings.serialSpeed == 38400) {
-            doc["8400"] = checked;
+            doc["38400"] = checked;
         } else if (ConfigSettings.serialSpeed == 57600) {
             doc["57600"] = checked;
         } else if (ConfigSettings.serialSpeed == 115200) {
@@ -932,7 +932,7 @@ void handleRoot() {
         const char* ethMac = "ethMac";
         const char* ethSpd = "ethSpd";
         const char* ethIp = "ethIp";
-        const char* etchMask = "etchMask";
+        const char* ethMask = "ethMask";
         const char* ethGate = "ethGate";
         if (ConfigSettings.connectedEther) {
             doc[connectedEther] = yes;
@@ -940,7 +940,7 @@ void handleRoot() {
             doc[ethMac] = ETH.macAddress();
             doc[ethSpd] = String(ETH.linkSpeed()) + String(" Mbps");
             doc[ethIp] = ETH.localIP().toString();
-            doc[etchMask] = ETH.subnetMask().toString();
+            doc[ethMask] = ETH.subnetMask().toString();
             doc[ethGate] = ETH.gatewayIP().toString();
         } else {
             doc[connectedEther] = no;
@@ -948,7 +948,7 @@ void handleRoot() {
             doc[ethMac] = notConnected;
             doc[ethSpd] = notConnected;
             doc[ethIp] = notConnected;
-            doc[etchMask] = notConnected;
+            doc[ethMask] = notConnected;
             doc[ethGate] = notConnected;
         }
 
