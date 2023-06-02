@@ -893,17 +893,16 @@ void handleRoot() {
         const char* off = "Off";
 
         if (ConfigSettings.connectedClients > 0) {
-            if (ConfigSettings.connectedClients > 1) {
-                doc[connectedSocketStatus] = "Yes, " + String(ConfigSettings.connectedClients) + "connection";
-                doc[connectedSocket] = readableTime;
-            } else {
-                doc[connectedSocketStatus] = "Yes, " + String(ConfigSettings.connectedClients) + " connections";
-                doc[connectedSocket] = readableTime;
-            }
+            char str[32];
+            const uint8_t n = ConfigSettings.connectedClients;
+            snprintf(str, sizeof(str), "%s, %d connection%s", yes, n, (n > 1 ? "s" : ""));
+            doc[connectedSocketStatus] = str;
+            doc[connectedSocket] = readableTime;
         } else {
             doc[connectedSocketStatus] = no;
             doc[connectedSocket] = notConnected;
         }
+
         const char* operationalMode = "operationalMode";
         switch (ConfigSettings.coordinator_mode) {
             case COORDINATOR_MODE_USB:

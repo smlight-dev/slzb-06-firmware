@@ -60,7 +60,7 @@ struct ConfigSettingsStruct{
   int refreshLogs;
   char hostname[50];
   bool connectedSocket[10];
-  int connectedClients;
+  uint8_t connectedClients;
   unsigned long socketTime;
   int tempOffset;
   bool webAuth;
