@@ -8,5 +8,25 @@
 		"link":"https://raw.githubusercontent.com/smlight-dev/slzb-06-firmware/dev/ota/router_20221102.bin",
 		"rev":"20221102",
 		"notes":"Allow to set transmit power\nFix directly connected Xiaomi devices disconnecting\nSimpleLink SDK 6.30.00.84"
-	}
+	},
+	"list": [
+		{
+			"type": "Coordinator",
+			"rev": "20230507",
+			"notes": "Enable child aging to fix issues like #13478 (but not for older Xiaomi devices as they do not implement child aging correctly which gets them kicked out of the network)\nIncrease message timeout from 7 to 8 seconds to increase message delivery success rate for devices using a 7.5 seconds poll interval (#13478)\nImprove performance with larger network\nOptimize table sizes\nIncrease stack_size from 1024 to 8192\nSimpleLink SDK 7.10.00.98",
+			"link": "https://raw.githubusercontent.com/smlight-dev/slzb-06-firmware/dev/ota/coordinator_20230507.bin"
+		},
+		{
+			"type": "Coordinator",
+			"rev": "20221226",
+			"notes": "Improve performance/reliability for larger network (100+ devices)\nIncrease request retry attempts\nIncrease routing table sizes\nSimpleLink SDK 6.10.01.01",
+			"link": "https://raw.githubusercontent.com/smlight-dev/slzb-06-firmware/dev/ota/coordinator_20221226.bin"
+		},
+		{
+			"type": "Router",
+			"rev": "20221102",
+			"notes": "Allow to set transmit power\nFix directly connected Xiaomi devices disconnecting\nSimpleLink SDK 6.30.00.84",
+			"link": "https://raw.githubusercontent.com/smlight-dev/slzb-06-firmware/dev/ota/router_20221102.bin"
+		}
+	]
 }
