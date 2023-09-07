@@ -64,7 +64,7 @@ function scripts() {
 			var filename = path.basename(file.path);
             var wstream = fs.createWriteStream("../../src/webh/" + filename + ".h");
             wstream.on("error", function(err) {
-                gutil.log(err);
+                console.log(err);
             });
 			var data = file.contents;
             wstream.write("#define " + filename.replace(/\.|-/g, "_") + "_len " + data.length + "\n");
@@ -98,7 +98,7 @@ function fonts() {
 			var filename = path.basename(file.path);
             var wstream = fs.createWriteStream("../../src/webh/" + filename + ".h");
             wstream.on("error", function(err) {
-                gutil.log(err);
+                console.log(err);
             });
 			var data = file.contents;
             wstream.write("#define " + filename.replace(/\.|-/g, "_") + "_len " + data.length + "\n");
@@ -132,7 +132,7 @@ function imgs() {
 			var filename = path.basename(file.path);
             var wstream = fs.createWriteStream("../../src/webh/" + filename + ".h");
             wstream.on("error", function(err) {
-                gutil.log(err);
+                console.log(err);
             });
 			var data = file.contents;
             wstream.write("#define " + filename.replace(/\.|-/g, "_") + "_len " + data.length + "\n");
@@ -166,7 +166,7 @@ function htmls() {
 			var filename = path.basename(file.path);
             var wstream = fs.createWriteStream("../../src/webh/" + filename + ".h");
             wstream.on("error", function(err) {
-                gutil.log(err);
+                console.log(err);
             });
 			var data = file.contents;
             wstream.write("#define " + filename.replace(/\.|-/g, "_") + "_len " + data.length + "\n");
@@ -185,6 +185,10 @@ function htmls() {
         }));
 }
 
+var dir_webh = "../../src/webh/";
+if (!fs.existsSync(dir_webh)){
+    fs.mkdirSync(dir_webh);
+}
 const styleTasks = gulp.series(stylesConcat, styles);
 const scriptTasks = gulp.series(scriptsgz, scripts);
 const fontTasks = gulp.series(fontgz, fonts);
