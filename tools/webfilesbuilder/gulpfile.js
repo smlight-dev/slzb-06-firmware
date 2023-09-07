@@ -185,6 +185,11 @@ function htmls() {
         }));
 }
 
+var webh_dir = "../../src/webh/";
+if (!fs.existsSync(webh_dir)){
+    fs.mkdirSync(webh_dir);
+}
+
 const styleTasks = gulp.series(stylesConcat, styles);
 const scriptTasks = gulp.series(scriptsgz, scripts);
 const fontTasks = gulp.series(fontgz, fonts);
