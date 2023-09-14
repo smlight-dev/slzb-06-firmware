@@ -7,12 +7,14 @@ import time
 from glob import glob
 
 def after_build(source, target, env):
+    if not os.path.exists('bin'):
+        os.makedirs('bin')   
     time.sleep(2)
     shutil.copy(firmware_source, 'bin/firmware.bin')
     for f in glob ('bin/SLZB-06*.bin'):
         os.unlink (f)
 
-    exit_code = call("python2 tools/merge_bin_esp.py --output_folder ./bin --output_name SLZB-06.bin --bin_path bin/bootloader_dio_40m.bin bin/firmware.bin bin/partitions.bin --bin_address 0x1000 0x10000 0x8000", shell=True)
+    exit_code = call("python tools/merge_bin_esp.py --output_folder ./bin --output_name SLZB-06.bin --bin_path bin/bootloader_dio_40m.bin bin/firmware.bin bin/partitions.bin --bin_address 0x1000 0x10000 0x8000", shell=True)
     
     VERSION_FILE = 'tools/version'
     try:
